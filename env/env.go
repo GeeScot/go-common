@@ -7,7 +7,7 @@ import (
 
 // Read environment variables in to supplied struct, fields must have 'env' tag.
 func Read(envStruct interface{}) {
-	reflectValue := reflect.ValueOf(&envStruct)
+	reflectValue := reflect.ValueOf(envStruct)
 	reflectElem := reflectValue.Elem()
 	reflectType := reflectElem.Type()
 
