@@ -101,3 +101,12 @@ func (h HTTP) String() (string, error) {
 		return "", errors.New(response)
 	}
 }
+
+// FormatURL formats a base URL as long as there are string replacements (useful for unit testing).
+func FormatURL(baseURL string, params ...interface{}) string {
+	if strings.Contains(baseURL, "%s") {
+		return fmt.Sprintf(baseURL, params...)
+	}
+
+	return baseURL
+}
