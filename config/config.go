@@ -13,5 +13,5 @@ func Open(filename string, jsonStruct interface{}) {
 		log.Fatal(err)
 	}
 
-	json.Unmarshal(data, &jsonStruct)
+	json.Unmarshal(data, jsonStruct)
 }
