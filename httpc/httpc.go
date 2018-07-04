@@ -71,20 +71,9 @@ func (h HTTP) httpResult() ([]byte, int, error) {
 	return body, response.StatusCode, err
 }
 
-// JSON makes a json request and returns the result
-func (h HTTP) JSON(result interface{}) error {
-	body, status, err := h.httpResult()
-	if err != nil {
-		return err
-	}
-
-	switch status {
-	case http.StatusOK:
-		return json.Unmarshal(body, result)
-	default:
-		response := string(body)
-		return errors.New(response)
-	}
+func (h HTTP) Status() (int, error) {
+	_, status, err := h.httpResult()
+	return status, err
 }
 
 func (h HTTP) String() (string, error) {
@@ -99,6 +88,21 @@ func (h HTTP) String() (string, error) {
 	default:
 		response := string(body)
 		return "", errors.New(response)
+	}
+}
+
+func (h HTTP) JSON(result interface{}) error {
+	body, status, err := h.httpResult()
+	if err != nil {
+		return err
+	}
+
+	switch status {
+	case http.StatusOK:
+		return json.Unmarshal(body, result)
+	default:
+		response := string(body)
+		return errors.New(response)
 	}
 }
 
