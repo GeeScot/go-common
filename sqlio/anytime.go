@@ -5,7 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gurparit/go-common/logio"
+	"fmt"
+	"errors"
 )
 
 type AnyTime struct {
@@ -13,17 +14,15 @@ type AnyTime struct {
 }
 
 // Match satisfies sqlmock.Argument interface
-func (a AnyTime) Match(v driver.Value) bool {
+func (a AnyTime) Match(v driver.Value) (bool, error) {
 	expectedValue := a.expect.String()[:19]
 	actualValue := v.(time.Time).String()[:19]
 
 	actualValue = strings.Replace(actualValue, "T", " ", 1)
 
 	if expectedValue == actualValue {
-		return true
+		return true, nil
 	}
 
-	logio.Println("AnyTime{}: expect [%s], actual [%s]", expectedValue, actualValue)
-
-	return false
+	return false, errors.New(fmt.Sprintf("AnyTime{}: expect [%s], actual [%s]", expectedValue, actualValue))
 }

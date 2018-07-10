@@ -3,13 +3,11 @@ package sqlio
 import (
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 
 	"database/sql"
 
-	"github.com/gurparit/callisto/global"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -23,27 +21,27 @@ type SQLio struct {
 	obj *interface{}
 }
 
-func OpenDatabase(database string) *sql.DB {
+var db *sql.DB
+
+func OpenSQLite(database string) {
 	sqlite, err := sql.Open("sqlite3", database)
 	if err != nil {
 		panic(err)
 	}
 
-	return sqlite
+	db = sqlite
 }
 
-func CanExecute() bool {
-	if global.DB == nil {
-		log.Println("DB is nil or not connected")
-		return false
+func (sqlio *SQLio) CanExecute() (bool, error) {
+	if db == nil {
+		return false, errors.New("DB is nil or not connected")
 	}
 
-	if err := global.DB.Ping(); err != nil {
-		log.Println("DB error %s", err.Error())
-		return false
+	if err := db.Ping(); err != nil {
+		return false, err
 	}
 
-	return true
+	return true, nil
 }
 
 func (sqlio *SQLio) tableName() string {
@@ -77,14 +75,14 @@ func (sqlio *SQLio) SetID(id int64) {
 }
 
 func (sqlio *SQLio) Select(id int64) error {
-	if !CanExecute() {
-		return errors.New("cannot connect db")
+	if _, err := sqlio.CanExecute(); err != nil {
+		return err
 	}
 
 	table := sqlio.tableName()
 	query := fmt.Sprintf("SELECT * FROM %s WHERE id=? LIMIT 1", table)
 
-	rows, err := global.DB.Query(query, id)
+	rows, err := db.Query(query, id)
 	if err != nil {
 		return err
 	}
@@ -107,8 +105,8 @@ func (sqlio *SQLio) Select(id int64) error {
 }
 
 func (sqlio *SQLio) SelectWhere(values Values) error {
-	if !CanExecute() {
-		return errors.New("cannot connect db")
+	if _, err := sqlio.CanExecute(); err != nil {
+		return err
 	}
 
 	table := sqlio.tableName()
@@ -118,7 +116,7 @@ func (sqlio *SQLio) SelectWhere(values Values) error {
 	query += where
 	query += " LIMIT 1"
 
-	rows, err := global.DB.Query(query, params...)
+	rows, err := db.Query(query, params...)
 	if err != nil {
 		return err
 	}
@@ -141,7 +139,7 @@ func (sqlio *SQLio) SelectWhere(values Values) error {
 }
 
 func (sqlio SQLio) Exists(values Values) bool {
-	if !CanExecute() {
+	if _, err := sqlio.CanExecute(); err != nil {
 		return false
 	}
 
@@ -152,7 +150,7 @@ func (sqlio SQLio) Exists(values Values) bool {
 	query += where
 	query += " LIMIT 1"
 
-	rows, err := global.DB.Query(query, params...)
+	rows, err := db.Query(query, params...)
 	if err != nil {
 		return false
 	}
@@ -169,9 +167,9 @@ func (sqlio SQLio) Exists(values Values) bool {
 	return count > 0
 }
 
-func (sqlio *SQLio) Save() {
-	if !CanExecute() {
-		return
+func (sqlio *SQLio) Save() error {
+	if _, err := sqlio.CanExecute(); err != nil {
+		return err
 	}
 
 	var data []interface{}
@@ -200,35 +198,33 @@ func (sqlio *SQLio) Save() {
 	table := sqlio.tableName()
 	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table, columns, inputValues)
 
-	stmnt, err := global.DB.Prepare(query)
+	stmnt, err := db.Prepare(query)
 	if err != nil {
-		log.Println(err.Error())
-		return
+		return err
 	}
 
 	result, err := stmnt.Exec(data...)
 	if err != nil {
-		log.Println(err.Error())
-		return
+		return err
 	}
 
 	if _, err := result.RowsAffected(); err != nil {
-		log.Println(err.Error())
-		return
+		return err
 	}
 
 	newID, err := result.LastInsertId()
 	if err != nil {
-		log.Println(err.Error())
-		return
+		return err
 	}
 
 	sqlio.SetID(newID)
+
+	return nil
 }
 
-func (sqlio *SQLio) Update(newObj interface{}) {
-	if !CanExecute() {
-		return
+func (sqlio *SQLio) Update(newObj interface{}) error {
+	if _, err := sqlio.CanExecute(); err != nil {
+		return err
 	}
 
 	var data []interface{}
@@ -257,58 +253,55 @@ func (sqlio *SQLio) Update(newObj interface{}) {
 	table := sqlio.tableName()
 	query := fmt.Sprintf("UPDATE %s SET %s WHERE id=?", table, sets[:strLength])
 
-	stmnt, err := global.DB.Prepare(query)
+	stmnt, err := db.Prepare(query)
 	if err != nil {
-		log.Println(err.Error())
-		return
+		return err
 	}
 
 	result, err := stmnt.Exec(data...)
 	if err != nil {
-		log.Println(err.Error())
-		return
+		return err
 	}
 
 	if _, err := result.RowsAffected(); err != nil {
-		log.Println(err.Error())
-		return
+		return err
 	}
 
 	sqlio.obj = &newObj
 	sqlio.SetID(id)
+
+	return nil
 }
 
-func (sqlio *SQLio) Delete() {
-	if !CanExecute() {
-		return
+func (sqlio *SQLio) Delete() error {
+	if _, err := sqlio.CanExecute(); err != nil {
+		return err
 	}
 
 	table := sqlio.tableName()
 	query := fmt.Sprintf("DELETE FROM %s WHERE id=?", table)
 
-	stmnt, err := global.DB.Prepare(query)
+	stmnt, err := db.Prepare(query)
 	if err != nil {
-		log.Println(err.Error())
-		return
+		return err
 	}
 
 	id := sqlio.GetID()
 
 	if id < 0 {
-		log.Println("sql.delete: cannot delete what is not there")
-		return
+		return errors.New("sql.delete: cannot delete what is not there")
 	}
 
 	result, err := stmnt.Exec(id)
 	if err != nil {
-		log.Println(err.Error())
-		return
+		return err
 	}
 
 	if _, err = result.RowsAffected(); err != nil {
-		log.Println(err.Error())
-		return
+		return err
 	}
+
+	return nil
 }
 
 func (sqlio *SQLio) whereClause(values Values) (string, []interface{}) {
