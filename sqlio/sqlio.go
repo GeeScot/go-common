@@ -21,13 +21,13 @@ type SQLio struct {
 
 var db *sql.DB
 
-func OpenSQLite(database string) {
-	sqlite, err := sql.Open("sqlite3", database)
+func Open(driverName string, dataSourceName string) {
+	conn, err := sql.Open(driverName, dataSourceName)
 	if err != nil {
 		panic(err)
 	}
 
-	db = sqlite
+	db = conn
 }
 
 func (sqlio *SQLio) CanExecute() (bool, error) {
