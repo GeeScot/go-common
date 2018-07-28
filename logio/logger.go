@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Println print out the message with timestamp prefix.
 func Println(message interface{}, args ...interface{}) {
 	var log interface{}
 
@@ -18,5 +19,5 @@ func Println(message interface{}, args ...interface{}) {
 	}
 
 	timeStamp := time.Now().Format(time.RFC3339)
-	fmt.Printf("[%s] %v\n", timeStamp, log)
+	fmt.Printf("[%s] %+v\n", timeStamp, log)
 }
