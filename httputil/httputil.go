@@ -1,4 +1,4 @@
-package httpc
+package httputil
 
 import (
 	"compress/gzip"
