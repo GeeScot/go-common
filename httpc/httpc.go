@@ -12,6 +12,7 @@ import (
 	"strings"
 )
 
+// HTTP struct to handle required HTTP params
 type HTTP struct {
 	TargetURL string
 	Method    string
@@ -71,11 +72,29 @@ func (h HTTP) httpResult() ([]byte, int, error) {
 	return body, response.StatusCode, err
 }
 
+// Status get http response status only
 func (h HTTP) Status() (int, error) {
 	_, status, err := h.httpResult()
 	return status, err
 }
 
+// Raw get raw http response body
+func (h HTTP) Raw() ([]byte, error) {
+	body, status, err := h.httpResult()
+	if err != nil {
+		return nil, err
+	}
+
+	switch status {
+	case http.StatusOK:
+		return body, nil
+	default:
+		response := string(body)
+		return nil, errors.New(response)
+	}
+}
+
+// String get string formatted response
 func (h HTTP) String() (string, error) {
 	body, status, err := h.httpResult()
 	if err != nil {
@@ -91,6 +110,7 @@ func (h HTTP) String() (string, error) {
 	}
 }
 
+// JSON get json result
 func (h HTTP) JSON(result interface{}) error {
 	body, status, err := h.httpResult()
 	if err != nil {
