@@ -51,7 +51,7 @@ func (h HTTP) httpResult() ([]byte, int, error) {
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		return nil, response.StatusCode, err
+		return nil, http.StatusInternalServerError, err
 	}
 
 	defer response.Body.Close()
