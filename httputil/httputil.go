@@ -24,7 +24,7 @@ type HTTP struct {
 func (h HTTP) httpResult() ([]byte, int, error) {
 	var err error
 	var body []byte
-	var data io.Reader = nil
+	var data io.Reader
 
 	if h.Form != nil {
 		values := url.Values{}
@@ -51,7 +51,6 @@ func (h HTTP) httpResult() ([]byte, int, error) {
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		fmt.Errorf(err.Error())
 		return nil, response.StatusCode, err
 	}
 
