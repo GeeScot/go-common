@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// Read environment variables in to supplied struct, fields must have 'env' tag.
+// Read environment variables in to struct, fields must have 'env' tag.
 func Read(envStruct interface{}) {
 	reflectValue := reflect.ValueOf(envStruct)
 	reflectElem := reflectValue.Elem()
@@ -22,4 +22,13 @@ func Read(envStruct interface{}) {
 			}
 		}
 	}
+}
+
+// Optional attempt to get an optional environment variable or choose default value
+func Optional(key, defaultValue string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+
+	return defaultValue
 }
