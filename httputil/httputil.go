@@ -16,6 +16,7 @@ import (
 type HTTP struct {
 	TargetURL string
 	Method    string
+	Body      string
 	Headers   map[string]string
 	Form      map[string]string
 }
@@ -33,6 +34,8 @@ func (h HTTP) httpResult() ([]byte, int, error) {
 		}
 
 		data = strings.NewReader(values.Encode())
+	} else {
+		data = strings.NewReader(h.Body)
 	}
 
 	request, err := http.NewRequest(h.Method, h.TargetURL, data)
